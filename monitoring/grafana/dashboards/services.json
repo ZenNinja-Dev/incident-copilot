@@ -1,0 +1,36 @@
+{
+  "uid": "incident-copilot",
+  "title": "Incident Copilot — Services",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "5s",
+  "time": { "from": "now-15m", "to": "now" },
+  "panels": [
+    {
+      "id": 1, "type": "timeseries", "title": "Request rate (req/s)",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "refId": "A", "expr": "sum by (service) (rate(app_requests_total[1m]))", "legendFormat": "{{service}}" }
+      ]
+    },
+    {
+      "id": 2, "type": "timeseries", "title": "Error ratio",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "percentunit", "min": 0, "max": 1 }, "overrides": [] },
+      "targets": [
+        { "refId": "A", "expr": "sum by (service) (rate(app_requests_total{status=\"500\"}[1m])) / clamp_min(sum by (service) (rate(app_requests_total[1m])), 0.001)", "legendFormat": "{{service}}" }
+      ]
+    },
+    {
+      "id": 3, "type": "timeseries", "title": "p95 latency (s)",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
+      "targets": [
+        { "refId": "A", "expr": "histogram_quantile(0.95, sum by (service, le) (rate(app_request_latency_seconds_bucket[5m])))", "legendFormat": "{{service}}" }
+      ]
+    }
+  ]
+}

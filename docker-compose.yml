@@ -1,0 +1,55 @@
+name: incident-copilot
+
+services:
+  checkout:
+    build: ./services/app
+    environment:
+      SERVICE_NAME: checkout
+      DOWNSTREAM: http://payments:8000
+    ports: ["8001:8000"]
+
+  payments:
+    build: ./services/app
+    environment:
+      SERVICE_NAME: payments
+    ports: ["8002:8000"]
+
+  orders:
+    build: ./services/app
+    environment:
+      SERVICE_NAME: orders
+      DOWNSTREAM: http://inventory:8000
+    ports: ["8003:8000"]
+
+  inventory:
+    build: ./services/app
+    environment:
+      SERVICE_NAME: inventory
+    ports: ["8004:8000"]
+
+  loadgen:
+    image: curlimages/curl:8.10.1
+    depends_on: [checkout, orders]
+    command: >
+      sh -c "while true; do
+        curl -s http://checkout:8000/work > /dev/null;
+        curl -s http://orders:8000/work > /dev/null;
+        sleep 1; done"
+
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports: ["9090:9090"]
+
+  grafana:
+    image: grafana/grafana:11.3.0
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports: ["3001:3000"]
+    depends_on: [prometheus]
