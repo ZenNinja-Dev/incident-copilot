@@ -4,8 +4,8 @@ Output demo/triage.gif
 
 Set Shell "bash"
 Set FontSize 14
-Set Width 1100
-Set Height 620
+Set Width 1180
+Set Height 760
 Set Padding 18
 Set TypingSpeed 45ms
 Set Framerate 24
@@ -18,23 +18,23 @@ Type "source .venv/bin/activate" Enter
 Type "export OLLAMA_MODEL=qwen2.5:14b" Enter
 Type "export PS1='incident-copilot $ '" Enter
 Type "clear" Enter
-Type "curl -s -X POST 'http://localhost:8002/chaos?failure_rate=0.5' >/dev/null 2>&1" Enter
-Sleep 20s
+Type "curl -s -X POST 'http://localhost:8002/chaos?endpoint=charge&failure_rate=0.6' >/dev/null 2>&1" Enter
+Sleep 25s
 Type "python -m agent.triage >/dev/null 2>&1" Enter
-Sleep 50s
+Sleep 60s
 Type "clear" Enter
 Show
 
 # --- visible demo ---
-Type "# 1) inject an incident: 50% failures on payments" Enter
+Type "# 1) inject an incident: break the /charge endpoint of payments" Enter
 Sleep 1s
-Type "curl -s -X POST 'http://localhost:8002/chaos?failure_rate=0.5' | python3 -m json.tool" Enter
+Type "curl -s -X POST 'http://localhost:8002/chaos?endpoint=charge&failure_rate=0.6' | python3 -m json.tool" Enter
 Sleep 3s
 Type "# 2) run the local AI triage agent (Ollama + LangGraph)" Enter
 Sleep 1s
 Type "python -m agent.triage" Enter
-Sleep 16s
+Sleep 35s
 Sleep 3s
 Type "# reset" Enter
-Type "curl -s -X POST 'http://localhost:8002/chaos?failure_rate=0' >/dev/null" Enter
+Type "curl -s -X POST 'http://localhost:8002/chaos?endpoint=charge&failure_rate=0' >/dev/null" Enter
 Sleep 2s

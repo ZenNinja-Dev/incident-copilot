@@ -5,35 +5,41 @@ services:
     build: ./services/app
     environment:
       SERVICE_NAME: checkout
-      DOWNSTREAM: http://payments:8000
+      ENDPOINTS: checkout
+      DOWNSTREAM: http://payments:8000/charge
     ports: ["8001:8000"]
 
   payments:
     build: ./services/app
     environment:
       SERVICE_NAME: payments
+      ENDPOINTS: charge,refund
     ports: ["8002:8000"]
 
   orders:
     build: ./services/app
     environment:
       SERVICE_NAME: orders
-      DOWNSTREAM: http://inventory:8000
+      ENDPOINTS: order
+      DOWNSTREAM: http://inventory:8000/reserve
     ports: ["8003:8000"]
 
   inventory:
     build: ./services/app
     environment:
       SERVICE_NAME: inventory
+      ENDPOINTS: reserve,stock
     ports: ["8004:8000"]
 
   loadgen:
     image: curlimages/curl:8.10.1
-    depends_on: [checkout, orders]
+    depends_on: [checkout, orders, payments, inventory]
     command: >
       sh -c "while true; do
-        curl -s http://checkout:8000/work > /dev/null;
-        curl -s http://orders:8000/work > /dev/null;
+        curl -s http://checkout:8000/checkout > /dev/null;
+        curl -s http://orders:8000/order > /dev/null;
+        curl -s http://payments:8000/refund > /dev/null;
+        curl -s http://inventory:8000/stock > /dev/null;
         sleep 1; done"
 
   prometheus:

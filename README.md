@@ -41,21 +41,28 @@ loadgen -> checkout -> payments
 
 ## AI triage
 
-A local agent (Ollama + LangGraph) queries live Prometheus metrics through
-tools, flags unhealthy services and reasons about the root cause across the
-service dependency graph — no cloud, no API keys. Full details in `agent/`.
+A local agent (Ollama + LangGraph) reads live Prometheus metrics through tools
+and produces a full incident report — no cloud, no API keys. It scores severity,
+traces the root cause across the service dependency graph, drills down to the
+failing endpoint, compares against five minutes ago, and suggests a remediation.
+Full details in `agent/`.
 
     uv venv && source .venv/bin/activate
     uv pip install -r agent/requirements.txt
-    curl -X POST "http://localhost:8002/chaos?failure_rate=0.5"   # break payments
+    # break one endpoint, then triage
+    curl -X POST "http://localhost:8002/chaos?endpoint=charge&failure_rate=0.6"
     python -m agent.triage
 
-Example output during the incident above:
+Example output:
 
-    SUMMARY: Two services are unhealthy with high error ratios and latency.
-    AFFECTED: checkout (error_ratio 0.22, p95 0.42s),
-              payments (error_ratio 0.20, p95 0.23s).
-    ROOT CAUSE: payments — the failing dependency; checkout errors are cascaded.
+    SEVERITY: SEV1 — peak error ratio 0.25 across affected services.
+    SUMMARY: payments is failing, causing errors in checkout.
+    AFFECTED: checkout (error_ratio 0.25, p95 0.28s),
+              payments (error_ratio 0.14, p95 0.22s).
+    ROOT CAUSE: payments, /charge endpoint — errors.
+    WHAT CHANGED: payments error ratio rose from 0.00 to 0.14 in the last 5 min.
+    REMEDIATION: inspect /charge's recent deploy/config and logs; consider a
+                 rollback or restart; verify its dependencies.
 
 ## Stack
 
